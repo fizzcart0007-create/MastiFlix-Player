@@ -1,12 +1,18 @@
-import { put, head } from "@vercel/blob";
+import { put, get } from "@vercel/blob";
 
 const QUEUE_FILE = "queue.json";
 
 async function getQueue() {
   try {
-    const blob = await head(QUEUE_FILE);
-    const response = await fetch(blob.url);
-    return await response.json();
+    const result = await get(QUEUE_FILE, {
+      access: "private",
+      useCache: false
+    });
+
+    if (!result) return [];
+
+    const text = await new Response(result.stream).text();
+    return JSON.parse(text);
   } catch {
     return [];
   }
