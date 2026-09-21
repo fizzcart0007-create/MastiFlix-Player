@@ -7,6 +7,21 @@ export default async function handler(req, res) {
       const fileId = video.file_id;
       const chatId = update.message.chat.id;
 
+      const queueUrl =
+        "https://masti-flix-player-a9rn.vercel.app/api/queue";
+
+      const queueResponse = await fetch(queueUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          file_id: fileId
+        })
+      });
+
+      const queueResult = await queueResponse.json();
+
       await fetch(
         `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendMessage`,
         {
@@ -16,7 +31,9 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             chat_id: chatId,
-            text: `✅ Video received!\n\nFile ID:\n${fileId}`
+            text: queueResult.ok
+              ? `✅ Video queue me add ho gaya!\n\nQueue: ${queueResult.queue_length}`
+              : "❌ Video queue me add nahi ho paya."
           })
         }
       );
