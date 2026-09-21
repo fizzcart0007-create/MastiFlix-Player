@@ -2,7 +2,9 @@ export default async function handler(req, res) {
   try {
     const update = req.body;
 
-    if (update?.message?.chat?.id) {
+    if (update?.message?.video) {
+      const video = update.message.video;
+      const fileId = video.file_id;
       const chatId = update.message.chat.id;
 
       await fetch(
@@ -14,7 +16,7 @@ export default async function handler(req, res) {
           },
           body: JSON.stringify({
             chat_id: chatId,
-            text: "🎬 MastiFlix Player is working!"
+            text: `✅ Video received!\n\nFile ID:\n${fileId}`
           })
         }
       );
@@ -25,7 +27,7 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
-    console.error(error);
+    console.error("BOT ERROR:", error);
 
     return res.status(500).json({
       ok: false,
