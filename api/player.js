@@ -1,7 +1,31 @@
-export default function handler(req, res) {
-  res.setHeader("Content-Type", "text/html; charset=utf-8");
+export default async function handler(req, res) {
+  const fileId = req.query.file_id;
 
-  res.status(200).send(`
+  if (!fileId) {
+    return res.status(400).send("Video file_id missing");
+  }
+
+  const botToken = process.env.BOT_TOKEN;
+
+  try {
+    const telegramResponse = await fetch(
+      `https://api.telegram.org/bot${botToken}/getFile?file_id=${encodeURIComponent(fileId)}`
+    );
+
+    const telegramData = await telegramResponse.json();
+
+    if (!telegramData.ok) {
+      return res.status(500).send("Telegram file not found");
+    }
+
+    const filePath = telegramData.result.file_path;
+
+    const videoUrl =
+      `https://api.telegram.org/file/bot${botToken}/${filePath}`;
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+
+    return res.status(200).send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -14,15 +38,12 @@ export default function handler(req, res) {
       box-sizing: border-box;
     }
 
-    html,
     body {
       margin: 0;
-      padding: 0;
-      width: 100%;
-      min-height: 100%;
       background: #000;
       color: #fff;
       font-family: Arial, sans-serif;
+      min-height: 100vh;
     }
 
     .header {
@@ -32,25 +53,17 @@ export default function handler(req, res) {
       font-weight: bold;
     }
 
-    .player-box {
-      width: 100%;
-      max-width: 1000px;
-      margin: 0 auto;
-      background: #000;
-    }
-
     video {
       width: 100%;
       max-height: 75vh;
-      display: block;
       background: #000;
+      display: block;
     }
 
     .message {
       text-align: center;
-      padding: 25px 15px;
+      padding: 20px;
       color: #aaa;
-      font-size: 15px;
     }
   </style>
 </head>
@@ -61,27 +74,23 @@ export default function handler(req, res) {
     🎬 MastiFlix Player
   </div>
 
-  <div class="player-box">
-    <video
-      id="player"
-      controls
-      playsinline
-      preload="metadata"
-    ></video>
+  <video
+    controls
+    playsinline
+    preload="metadata"
+    src="${videoUrl}"
+  ></video>
+
+  <div class="message">
+    ▶️ Video ready to play
   </div>
-
-  <div class="message" id="message">
-    MastiFlix Player Ready
-  </div>
-
-  <script>
-    const player = document.getElementById("player");
-    const message = document.getElementById("message");
-
-    message.textContent = "MastiFlix Player Ready";
-  </script>
 
 </body>
 </html>
-  `);
+    `);
+
+  } catch (error) {
+    console.error(error);
+    return res.status(500).send("Player error");
+  }
 }
