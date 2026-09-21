@@ -30,8 +30,24 @@ async function saveQueue(queue) {
   );
 }
 
+function checkCronSecret(req) {
+  const authHeader = req.headers.authorization;
+  const cronSecret = process.env.CRON_SECRET;
+
+  return cronSecret && authHeader === `Bearer ${cronSecret}`;
+}
+
 export default async function handler(req, res) {
   try {
+
+    // 🔐 Security check
+    if (!checkCronSecret(req)) {
+      return res.status(401).json({
+        ok: false,
+        error: "Unauthorized"
+      });
+    }
+
     const queue = await getQueue();
 
     if (queue.length === 0) {
@@ -78,7 +94,9 @@ export default async function handler(req, res) {
       });
     }
 
+    // ✅ Remove video only after successful posting
     queue.shift();
+
     await saveQueue(queue);
 
     return res.status(200).json({
