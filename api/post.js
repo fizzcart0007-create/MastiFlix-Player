@@ -49,7 +49,17 @@ export default async function handler(req, res) {
         body: JSON.stringify({
           chat_id: CHANNEL_ID,
           video: video.file_id,
-          caption: "🎬 MastiFlix Player"
+          caption: "🎬 MastiFlix Player",
+          reply_markup: {
+            inline_keyboard: [
+              [
+                {
+                  text: "▶️ Play Now",
+                  url: "https://t.me/MastiFlixPlayer2026Bot?start=play"
+                }
+              ]
+            ]
+          }
         })
       }
     );
