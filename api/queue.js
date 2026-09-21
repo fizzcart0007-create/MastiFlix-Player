@@ -17,7 +17,7 @@ async function saveQueue(queue) {
     QUEUE_FILE,
     JSON.stringify(queue),
     {
-      access: "private",
+      access: "public",
       addRandomSuffix: false,
       allowOverwrite: true,
       contentType: "application/json"
