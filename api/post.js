@@ -1,18 +1,75 @@
+import { head, put } from "@vercel/blob";
+
 const CHANNEL_ID = "-1004372527859";
+const QUEUE_FILE = "queue.json";
+
+async function getQueue() {
+  try {
+    const blob = await head(QUEUE_FILE);
+    const response = await fetch(blob.url);
+    return await response.json();
+  } catch {
+    return [];
+  }
+}
+
+async function saveQueue(queue) {
+  await put(
+    QUEUE_FILE,
+    JSON.stringify(queue),
+    {
+      access: "private",
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: "application/json"
+    }
+  );
+}
 
 export default async function handler(req, res) {
   try {
-    if (req.method !== "POST" && req.method !== "GET") {
-      return res.status(405).json({
-        ok: false,
-        error: "Method not allowed"
+    const queue = await getQueue();
+
+    if (queue.length === 0) {
+      return res.status(200).json({
+        ok: true,
+        message: "Queue is empty"
       });
     }
 
+    const video = queue[0];
+
+    const telegramResponse = await fetch(
+      `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendVideo`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          chat_id: CHANNEL_ID,
+          video: video.file_id,
+          caption: "🎬 MastiFlix Player"
+        })
+      }
+    );
+
+    const telegramResult = await telegramResponse.json();
+
+    if (!telegramResult.ok) {
+      return res.status(500).json({
+        ok: false,
+        error: telegramResult.description
+      });
+    }
+
+    queue.shift();
+    await saveQueue(queue);
+
     return res.status(200).json({
       ok: true,
-      message: "Post API is ready",
-      channel_id: CHANNEL_ID
+      message: "Video posted successfully",
+      remaining: queue.length
     });
 
   } catch (error) {
