@@ -8,7 +8,7 @@ export default async function handler(req, res) {
       const chatId = update.message.chat.id;
 
       const queueUrl =
-        "https://masti-flix-player-a9rn.vercel.app/api/queue";
+        "https://masti-flix-player.vercel.app/api/queue";
 
       const queueResponse = await fetch(queueUrl, {
         method: "POST",
@@ -33,7 +33,7 @@ export default async function handler(req, res) {
             chat_id: chatId,
             text: queueResult.ok
               ? `✅ Video queue me add ho gaya!\n\nQueue: ${queueResult.queue_length}`
-              : "❌ Video queue me add nahi ho paya."
+              : `❌ Video queue me add nahi ho paya.\n\n${queueResult.error || ""}`
           })
         }
       );
