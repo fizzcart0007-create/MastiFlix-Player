@@ -39,7 +39,6 @@ function checkCronSecret(req) {
 
 export default async function handler(req, res) {
   try {
-
     if (!checkCronSecret(req)) {
       return res.status(401).json({
         ok: false,
@@ -58,6 +57,9 @@ export default async function handler(req, res) {
 
     const video = queue[0];
 
+    const playerUrl =
+      `https://masti-flix-player.vercel.app/api/player?file_id=${encodeURIComponent(video.file_id)}`;
+
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendVideo`,
       {
@@ -74,7 +76,7 @@ export default async function handler(req, res) {
               [
                 {
                   text: "▶️ Play Now",
-                  url: "https://masti-flix-player.vercel.app/api/player"
+                  url: playerUrl
                 }
               ]
             ]
