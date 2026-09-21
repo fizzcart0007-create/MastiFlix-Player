@@ -69,7 +69,8 @@ export default async function handler(req, res) {
     if (!telegramResult.ok) {
       return res.status(500).json({
         ok: false,
-        error: telegramResult.description
+        telegram_error: telegramResult.description,
+        telegram_result: telegramResult
       });
     }
 
