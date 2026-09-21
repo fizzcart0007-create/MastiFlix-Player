@@ -3,7 +3,7 @@ export default function handler(req, res) {
 
   res.status(200).send(`
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -14,32 +14,43 @@ export default function handler(req, res) {
       box-sizing: border-box;
     }
 
+    html,
     body {
       margin: 0;
+      padding: 0;
+      width: 100%;
+      min-height: 100%;
       background: #000;
       color: #fff;
       font-family: Arial, sans-serif;
-      min-height: 100vh;
     }
 
     .header {
-      padding: 16px;
+      padding: 18px;
       text-align: center;
-      font-size: 22px;
+      font-size: 24px;
       font-weight: bold;
+    }
+
+    .player-box {
+      width: 100%;
+      max-width: 1000px;
+      margin: 0 auto;
+      background: #000;
     }
 
     video {
       width: 100%;
       max-height: 75vh;
-      background: #000;
       display: block;
+      background: #000;
     }
 
     .message {
       text-align: center;
-      padding: 25px;
+      padding: 25px 15px;
       color: #aaa;
+      font-size: 15px;
     }
   </style>
 </head>
@@ -47,19 +58,28 @@ export default function handler(req, res) {
 <body>
 
   <div class="header">
-    🎬 MastiFlix
+    🎬 MastiFlix Player
   </div>
 
-  <video
-    id="player"
-    controls
-    playsinline
-    preload="metadata"
-  ></video>
+  <div class="player-box">
+    <video
+      id="player"
+      controls
+      playsinline
+      preload="metadata"
+    ></video>
+  </div>
 
-  <div class="message">
+  <div class="message" id="message">
     MastiFlix Player Ready
   </div>
+
+  <script>
+    const player = document.getElementById("player");
+    const message = document.getElementById("message");
+
+    message.textContent = "MastiFlix Player Ready";
+  </script>
 
 </body>
 </html>
