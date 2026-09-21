@@ -40,7 +40,6 @@ function checkCronSecret(req) {
 export default async function handler(req, res) {
   try {
 
-    // 🔐 Security check
     if (!checkCronSecret(req)) {
       return res.status(401).json({
         ok: false,
@@ -75,7 +74,7 @@ export default async function handler(req, res) {
               [
                 {
                   text: "▶️ Play Now",
-                  url: "https://t.me/MastiFlixPlayer2026Bot?start=play"
+                  url: "https://masti-flix-player.vercel.app/api/player"
                 }
               ]
             ]
@@ -94,9 +93,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // ✅ Remove video only after successful posting
     queue.shift();
-
     await saveQueue(queue);
 
     return res.status(200).json({
