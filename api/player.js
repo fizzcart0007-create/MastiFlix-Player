@@ -29,12 +29,20 @@ export default async function handler(req, res) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
 
   <title>MastiFlix Player</title>
 
-  <!-- AdsGram -->
+  <!-- Telegram WebApp SDK -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+  <!-- AdsGram SDK -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
   <style>
@@ -70,6 +78,7 @@ export default async function handler(req, res) {
       color: #aaa;
     }
   </style>
+
 </head>
 
 <body>
@@ -91,14 +100,40 @@ export default async function handler(req, res) {
   </div>
 
   <script>
+
+    // Telegram WebApp
+    try {
+      if (window.Telegram && window.Telegram.WebApp) {
+        window.Telegram.WebApp.ready();
+        window.Telegram.WebApp.expand();
+      }
+    } catch (error) {
+      console.log("Telegram WebApp error:", error);
+    }
+
+
+    // Video
     const video = document.getElementById("videoPlayer");
 
-    const AdController = window.Adsgram.init({
-      blockId: "int-49186"
-    });
 
+    // AdsGram
+    let AdController = null;
+
+    try {
+      if (window.Adsgram) {
+        AdController = window.Adsgram.init({
+          blockId: "int-49186"
+        });
+      }
+    } catch (error) {
+      console.log("AdsGram init error:", error);
+    }
+
+
+    // Show ad only once
     let adShown = false;
     let showingAd = false;
+
 
     video.addEventListener("play", async () => {
 
@@ -109,22 +144,47 @@ export default async function handler(req, res) {
       adShown = true;
       showingAd = true;
 
+      // Pause video before ad
       video.pause();
 
-      try {
-        await AdController.show();
-      } catch (error) {
-        console.log("AdsGram ad error:", error);
+
+      // Show AdsGram ad
+      if (AdController) {
+
+        try {
+
+          await AdController.show();
+
+          console.log("AdsGram ad completed");
+
+        } catch (error) {
+
+          console.log("AdsGram ad error:", error);
+
+        }
+
+      } else {
+
+        console.log("AdsGram controller unavailable");
+
       }
 
+
+      // Continue video
       showingAd = false;
 
       try {
+
         await video.play();
+
       } catch (error) {
+
         console.log("Video play error:", error);
+
       }
+
     });
+
   </script>
 
 </body>
@@ -132,7 +192,10 @@ export default async function handler(req, res) {
     `);
 
   } catch (error) {
-    console.error(error);
+
+    console.error("PLAYER ERROR:", error);
+
     return res.status(500).send("Player error");
+
   }
 }
