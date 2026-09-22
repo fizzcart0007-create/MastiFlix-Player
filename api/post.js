@@ -57,8 +57,14 @@ export default async function handler(req, res) {
 
     const video = queue[0];
 
+    /*
+      Telegram Mini App startapp parameter.
+      File ID ko URL-safe banaya ja raha hai.
+    */
+    const startParam = encodeURIComponent(video.file_id);
+
     const playerUrl =
-      `https://masti-flix-player.vercel.app/api/player?file_id=${encodeURIComponent(video.file_id)}`;
+      `https://t.me/MastiFlixPlayer2026Bot/Masti?startapp=${startParam}`;
 
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendVideo`,
