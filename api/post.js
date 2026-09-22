@@ -1,4 +1,5 @@
 import { put, get } from "@vercel/blob";
+import crypto from "crypto";
 
 const CHANNEL_ID = "-1004372527859";
 const QUEUE_FILE = "queue.json";
@@ -57,14 +58,27 @@ export default async function handler(req, res) {
 
     const video = queue[0];
 
-    /*
-      Telegram Mini App startapp parameter.
-      File ID ko URL-safe banaya ja raha hai.
-    */
-    const startParam = encodeURIComponent(video.file_id);
+    // Short token for Telegram Mini App
+    const token = crypto.randomBytes(12).toString("hex");
 
+    // Save actual Telegram file_id privately
+    await put(
+      `play/${token}.json`,
+      JSON.stringify({
+        file_id: video.file_id,
+        created_at: new Date().toISOString()
+      }),
+      {
+        access: "private",
+        addRandomSuffix: false,
+        allowOverwrite: false,
+        contentType: "application/json"
+      }
+    );
+
+    // Telegram Mini App direct link
     const playerUrl =
-      `https://t.me/MastiFlixPlayer2026Bot/Masti?startapp=${startParam}`;
+      `https://t.me/MastiFlixPlayer2026Bot/Masti?startapp=${token}`;
 
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${process.env.BOT_TOKEN}/sendVideo`,
@@ -96,8 +110,7 @@ export default async function handler(req, res) {
     if (!telegramResult.ok) {
       return res.status(500).json({
         ok: false,
-        telegram_error: telegramResult.description,
-        telegram_result: telegramResult
+        telegram_error: telegramResult.description
       });
     }
 
