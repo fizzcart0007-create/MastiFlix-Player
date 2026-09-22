@@ -1,13 +1,31 @@
+import { get } from "@vercel/blob";
+
 export default async function handler(req, res) {
-  const fileId = req.query.file_id;
-
-  if (!fileId) {
-    return res.status(400).send("Video file_id missing");
-  }
-
-  const botToken = process.env.BOT_TOKEN;
-
   try {
+    const token =
+      req.query.startapp ||
+      req.query.tgWebAppStartParam;
+
+    if (!token) {
+      return res.status(400).send("Video token missing");
+    }
+
+    const result = await get(`play/${token}.json`, {
+      access: "private",
+      useCache: false
+    });
+
+    const text = await new Response(result.stream).text();
+    const data = JSON.parse(text);
+
+    const fileId = data.file_id;
+
+    if (!fileId) {
+      return res.status(404).send("Video not found");
+    }
+
+    const botToken = process.env.BOT_TOKEN;
+
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${botToken}/getFile?file_id=${encodeURIComponent(fileId)}`
     );
@@ -23,7 +41,10 @@ export default async function handler(req, res) {
     const videoUrl =
       `https://api.telegram.org/file/bot${botToken}/${filePath}`;
 
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.setHeader(
+      "Content-Type",
+      "text/html; charset=utf-8"
+    );
 
     return res.status(200).send(`
 <!DOCTYPE html>
@@ -39,10 +60,10 @@ export default async function handler(req, res) {
 
   <title>MastiFlix Player</title>
 
-  <!-- Telegram WebApp SDK -->
+  <!-- Telegram WebApp -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
-  <!-- AdsGram SDK -->
+  <!-- AdsGram -->
   <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
   <style>
@@ -101,39 +122,27 @@ export default async function handler(req, res) {
 
   <script>
 
-    // Telegram WebApp
-    try {
-      if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-      }
-    } catch (error) {
-      console.log("Telegram WebApp error:", error);
+    // Telegram Mini App
+    if (window.Telegram && window.Telegram.WebApp) {
+      window.Telegram.WebApp.ready();
+      window.Telegram.WebApp.expand();
     }
 
+    const video =
+      document.getElementById("videoPlayer");
 
-    // Video
-    const video = document.getElementById("videoPlayer");
-
-
-    // AdsGram
     let AdController = null;
 
     try {
-      if (window.Adsgram) {
-        AdController = window.Adsgram.init({
-          blockId: "int-49186"
-        });
-      }
+      AdController = window.Adsgram.init({
+        blockId: "int-49186"
+      });
     } catch (error) {
       console.log("AdsGram init error:", error);
     }
 
-
-    // Show ad only once
     let adShown = false;
     let showingAd = false;
-
 
     video.addEventListener("play", async () => {
 
@@ -144,43 +153,23 @@ export default async function handler(req, res) {
       adShown = true;
       showingAd = true;
 
-      // Pause video before ad
       video.pause();
 
-
-      // Show AdsGram ad
       if (AdController) {
-
         try {
-
           await AdController.show();
-
           console.log("AdsGram ad completed");
-
         } catch (error) {
-
-          console.log("AdsGram ad error:", error);
-
+          console.log("AdsGram error:", error);
         }
-
-      } else {
-
-        console.log("AdsGram controller unavailable");
-
       }
 
-
-      // Continue video
       showingAd = false;
 
       try {
-
         await video.play();
-
       } catch (error) {
-
         console.log("Video play error:", error);
-
       }
 
     });
@@ -195,7 +184,8 @@ export default async function handler(req, res) {
 
     console.error("PLAYER ERROR:", error);
 
-    return res.status(500).send("Player error");
-
+    return res.status(500).send(
+      "Player error: " + error.message
+    );
   }
 }
