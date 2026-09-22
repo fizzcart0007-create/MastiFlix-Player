@@ -1,56 +1,10 @@
-import { get } from "@vercel/blob";
-
 export default async function handler(req, res) {
-  try {
-    const token =
-      req.query.startapp ||
-      req.query.tgWebAppStartParam;
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
 
-    if (!token) {
-      return res.status(400).send("Video token missing");
-    }
-
-    const result = await get(`play/${token}.json`, {
-      access: "private",
-      useCache: false
-    });
-
-    const text = await new Response(result.stream).text();
-    const data = JSON.parse(text);
-
-    const fileId = data.file_id;
-
-    if (!fileId) {
-      return res.status(404).send("Video not found");
-    }
-
-    const botToken = process.env.BOT_TOKEN;
-
-    const telegramResponse = await fetch(
-      `https://api.telegram.org/bot${botToken}/getFile?file_id=${encodeURIComponent(fileId)}`
-    );
-
-    const telegramData = await telegramResponse.json();
-
-    if (!telegramData.ok) {
-      return res.status(500).send("Telegram file not found");
-    }
-
-    const filePath = telegramData.result.file_path;
-
-    const videoUrl =
-      `https://api.telegram.org/file/bot${botToken}/${filePath}`;
-
-    res.setHeader(
-      "Content-Type",
-      "text/html; charset=utf-8"
-    );
-
-    return res.status(200).send(`
+  return res.status(200).send(`
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
   <meta charset="UTF-8">
 
   <meta
@@ -60,7 +14,7 @@ export default async function handler(req, res) {
 
   <title>MastiFlix Player</title>
 
-  <!-- Telegram WebApp -->
+  <!-- Telegram Mini App -->
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
   <!-- AdsGram -->
@@ -86,20 +40,26 @@ export default async function handler(req, res) {
       font-weight: bold;
     }
 
+    .info {
+      text-align: center;
+      padding: 30px 20px;
+      color: #aaa;
+    }
+
+    .status {
+      text-align: center;
+      padding: 15px;
+      color: #777;
+      font-size: 14px;
+    }
+
     video {
       width: 100%;
       max-height: 75vh;
       background: #000;
       display: block;
     }
-
-    .message {
-      text-align: center;
-      padding: 20px;
-      color: #aaa;
-    }
   </style>
-
 </head>
 
 <body>
@@ -108,84 +68,142 @@ export default async function handler(req, res) {
     🎬 MastiFlix Player
   </div>
 
+  <div id="info" class="info">
+    ⏳ Loading video...
+  </div>
+
   <video
     id="videoPlayer"
     controls
     playsinline
     preload="metadata"
-    src="${videoUrl}"
+    style="display:none;"
   ></video>
 
-  <div class="message">
-    ▶️ Video ready to play
+  <div class="status">
+    📺 Advertisement may appear before video playback
   </div>
 
-  <script>
+<script>
 
-    // Telegram Mini App
-    if (window.Telegram && window.Telegram.WebApp) {
-      window.Telegram.WebApp.ready();
-      window.Telegram.WebApp.expand();
+  // Telegram Mini App
+  const tg = window.Telegram?.WebApp;
+
+  if (tg) {
+    tg.ready();
+    tg.expand();
+  }
+
+  const info = document.getElementById("info");
+  const video = document.getElementById("videoPlayer");
+
+  // Telegram startapp parameter
+  const token =
+    tg?.initDataUnsafe?.start_param || "";
+
+  // AdsGram
+  let AdController = null;
+
+  try {
+    AdController = window.Adsgram.init({
+      blockId: "int-49186"
+    });
+  } catch (error) {
+    console.log("AdsGram init error:", error);
+  }
+
+  let adShown = false;
+  let showingAd = false;
+
+  async function loadVideo() {
+
+    if (!token) {
+
+      info.innerHTML = `
+        <b>🎬 MastiFlix Player</b>
+        <br><br>
+        Open this app from the Telegram channel's
+        <b>▶️ Play Now</b> button to play a video.
+      `;
+
+      return;
     }
-
-    const video =
-      document.getElementById("videoPlayer");
-
-    let AdController = null;
 
     try {
-      AdController = window.Adsgram.init({
-        blockId: "int-49186"
-      });
-    } catch (error) {
-      console.log("AdsGram init error:", error);
-    }
 
-    let adShown = false;
-    let showingAd = false;
+      const response = await fetch(
+        "/api/video?token=" + encodeURIComponent(token)
+      );
 
-    video.addEventListener("play", async () => {
+      const data = await response.json();
 
-      if (adShown || showingAd) {
+      if (!data.ok) {
+
+        info.innerHTML =
+          "❌ Video not available";
+
         return;
       }
 
-      adShown = true;
-      showingAd = true;
+      video.src = data.video_url;
 
-      video.pause();
+      video.style.display = "block";
 
-      if (AdController) {
-        try {
-          await AdController.show();
-          console.log("AdsGram ad completed");
-        } catch (error) {
-          console.log("AdsGram error:", error);
-        }
-      }
+      info.style.display = "none";
 
-      showingAd = false;
+    } catch (error) {
+
+      console.log(error);
+
+      info.innerHTML =
+        "❌ Unable to load video";
+    }
+  }
+
+  video.addEventListener("play", async () => {
+
+    if (adShown || showingAd) {
+      return;
+    }
+
+    adShown = true;
+    showingAd = true;
+
+    video.pause();
+
+    if (AdController) {
 
       try {
-        await video.play();
+
+        await AdController.show();
+
+        console.log("AdsGram ad completed");
+
       } catch (error) {
-        console.log("Video play error:", error);
+
+        console.log("AdsGram error:", error);
       }
+    }
 
-    });
+    showingAd = false;
 
-  </script>
+    try {
+
+      await video.play();
+
+    } catch (error) {
+
+      console.log("Video play error:", error);
+
+    }
+
+  });
+
+  loadVideo();
+
+</script>
 
 </body>
 </html>
-    `);
-
-  } catch (error) {
-
-    console.error("PLAYER ERROR:", error);
-
-    return res.status(500).send(
-      "Player error: " + error.message
-    );
-  }
+  `);
 }
