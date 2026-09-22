@@ -31,7 +31,11 @@ export default async function handler(req, res) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>MastiFlix Player</title>
+
+  <!-- AdsGram -->
+  <script src="https://sad.adsgram.ai/js/sad.min.js"></script>
 
   <style>
     * {
@@ -75,6 +79,7 @@ export default async function handler(req, res) {
   </div>
 
   <video
+    id="videoPlayer"
     controls
     playsinline
     preload="metadata"
@@ -84,6 +89,43 @@ export default async function handler(req, res) {
   <div class="message">
     ▶️ Video ready to play
   </div>
+
+  <script>
+    const video = document.getElementById("videoPlayer");
+
+    const AdController = window.Adsgram.init({
+      blockId: "int-49186"
+    });
+
+    let adShown = false;
+    let showingAd = false;
+
+    video.addEventListener("play", async () => {
+
+      if (adShown || showingAd) {
+        return;
+      }
+
+      adShown = true;
+      showingAd = true;
+
+      video.pause();
+
+      try {
+        await AdController.show();
+      } catch (error) {
+        console.log("AdsGram ad error:", error);
+      }
+
+      showingAd = false;
+
+      try {
+        await video.play();
+      } catch (error) {
+        console.log("Video play error:", error);
+      }
+    });
+  </script>
 
 </body>
 </html>
