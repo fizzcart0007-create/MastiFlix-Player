@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     "try {",
     "  if (window.Adsgram) {",
     "    AdController = window.Adsgram.init({",
-    '      blockId: "int-49186"',
+    '      blockId: "int-49327"',
     "    });",
     "  }",
     "} catch (error) {",
