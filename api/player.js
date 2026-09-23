@@ -10,7 +10,6 @@ export default async function handler(req, res) {
     "<title>MastiFlix Player</title>",
 
     '<script src="https://telegram.org/js/telegram-web-app.js"></script>',
-    '<script src="https://sad.adsgram.ai/js/sad.min.js"></script>',
 
     "<style>",
     "* { box-sizing: border-box; }",
@@ -36,29 +35,9 @@ export default async function handler(req, res) {
     "  color: #aaa;",
     "}",
 
-    ".buttons {",
-    "  text-align: center;",
-    "  padding: 15px;",
-    "}",
-
-    ".ad-button {",
-    "  background: #222;",
-    "  color: #fff;",
-    "  border: 1px solid #555;",
-    "  border-radius: 8px;",
-    "  padding: 12px 20px;",
-    "  font-size: 15px;",
-    "  cursor: pointer;",
-    "}",
-
-    ".ad-button:disabled {",
-    "  opacity: 0.5;",
-    "  cursor: default;",
-    "}",
-
     ".status {",
     "  text-align: center;",
-    "  padding: 10px;",
+    "  padding: 15px;",
     "  color: #777;",
     "  font-size: 13px;",
     "}",
@@ -81,13 +60,7 @@ export default async function handler(req, res) {
 
     '<video id="videoPlayer" controls playsinline preload="metadata" style="display:none;"></video>',
 
-    '<div id="buttons" class="buttons" style="display:none;">',
-    '<button id="adButton" class="ad-button">📺 Watch Ad</button>',
-    "</div>",
-
-    '<div class="status">',
-    "Advertisement is optional.",
-    "</div>",
+    '<div class="status">▶️ Video ready to play</div>',
 
     "<script>",
 
@@ -100,30 +73,10 @@ export default async function handler(req, res) {
 
     'const info = document.getElementById("info");',
     'const video = document.getElementById("videoPlayer");',
-    'const buttons = document.getElementById("buttons");',
-    'const adButton = document.getElementById("adButton");',
 
     "const token = tg && tg.initDataUnsafe",
     "  ? (tg.initDataUnsafe.start_param || '')",
     "  : '';",
-
-    "let AdController = null;",
-
-    "try {",
-
-    "  if (window.Adsgram) {",
-
-    "    AdController = window.Adsgram.init({",
-    '      blockId: "int-49327"',
-    "    });",
-
-    "  }",
-
-    "} catch (error) {",
-
-    '  console.log("AdsGram init error:", error);',
-
-    "}",
 
     "async function loadVideo() {",
 
@@ -145,14 +98,11 @@ export default async function handler(req, res) {
     '      info.innerHTML = "❌ Video not available";',
 
     "      return;",
-
     "    }",
 
     "    video.src = data.video_url;",
 
     '    video.style.display = "block";',
-
-    '    buttons.style.display = "block";',
 
     '    info.style.display = "none";',
 
@@ -165,44 +115,6 @@ export default async function handler(req, res) {
     "  }",
 
     "}",
-
-    "adButton.addEventListener('click', async function() {",
-
-    "  if (!AdController) {",
-
-    '    adButton.innerText = "Ad unavailable";',
-
-    "    return;",
-
-    "  }",
-
-    "  adButton.disabled = true;",
-
-    '  adButton.innerText = "⏳ Loading Ad...";',
-
-    "  try {",
-
-    "    await AdController.show();",
-
-    '    adButton.innerText = "✅ Ad completed";',
-
-    "  } catch (error) {",
-
-    "    console.log('AdsGram error:', error);",
-
-    '    adButton.innerText = "📺 Watch Ad";',
-
-    "  }",
-
-    "  setTimeout(function() {",
-
-    "    adButton.disabled = false;",
-
-    '    adButton.innerText = "📺 Watch Ad";',
-
-    "  }, 3000);",
-
-    "});",
 
     "loadVideo();",
 
