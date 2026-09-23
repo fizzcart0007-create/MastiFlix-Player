@@ -14,14 +14,65 @@ export default async function handler(req, res) {
 
     "<style>",
     "* { box-sizing: border-box; }",
-    "body { margin:0; background:#000; color:#fff; font-family:Arial,sans-serif; min-height:100vh; }",
-    ".header { padding:18px; text-align:center; font-size:24px; font-weight:bold; }",
-    ".info { text-align:center; padding:30px 20px; color:#aaa; }",
-    ".status { text-align:center; padding:15px; color:#777; font-size:14px; }",
-    "video { width:100%; max-height:75vh; background:#000; display:block; }",
-    "</style>",
 
+    "body {",
+    "  margin: 0;",
+    "  background: #000;",
+    "  color: #fff;",
+    "  font-family: Arial, sans-serif;",
+    "  min-height: 100vh;",
+    "}",
+
+    ".header {",
+    "  padding: 18px;",
+    "  text-align: center;",
+    "  font-size: 24px;",
+    "  font-weight: bold;",
+    "}",
+
+    ".info {",
+    "  text-align: center;",
+    "  padding: 30px 20px;",
+    "  color: #aaa;",
+    "}",
+
+    ".buttons {",
+    "  text-align: center;",
+    "  padding: 15px;",
+    "}",
+
+    ".ad-button {",
+    "  background: #222;",
+    "  color: #fff;",
+    "  border: 1px solid #555;",
+    "  border-radius: 8px;",
+    "  padding: 12px 20px;",
+    "  font-size: 15px;",
+    "  cursor: pointer;",
+    "}",
+
+    ".ad-button:disabled {",
+    "  opacity: 0.5;",
+    "  cursor: default;",
+    "}",
+
+    ".status {",
+    "  text-align: center;",
+    "  padding: 10px;",
+    "  color: #777;",
+    "  font-size: 13px;",
+    "}",
+
+    "video {",
+    "  width: 100%;",
+    "  max-height: 75vh;",
+    "  background: #000;",
+    "  display: block;",
+    "}",
+
+    "</style>",
     "</head>",
+
     "<body>",
 
     '<div class="header">🎬 MastiFlix Player</div>',
@@ -30,7 +81,13 @@ export default async function handler(req, res) {
 
     '<video id="videoPlayer" controls playsinline preload="metadata" style="display:none;"></video>',
 
-    '<div class="status">📺 Advertisement may appear before video playback</div>',
+    '<div id="buttons" class="buttons" style="display:none;">',
+    '<button id="adButton" class="ad-button">📺 Watch Ad</button>',
+    "</div>",
+
+    '<div class="status">',
+    "Advertisement is optional.",
+    "</div>",
 
     "<script>",
 
@@ -43,6 +100,8 @@ export default async function handler(req, res) {
 
     'const info = document.getElementById("info");',
     'const video = document.getElementById("videoPlayer");',
+    'const buttons = document.getElementById("buttons");',
+    'const adButton = document.getElementById("adButton");',
 
     "const token = tg && tg.initDataUnsafe",
     "  ? (tg.initDataUnsafe.start_param || '')",
@@ -51,17 +110,20 @@ export default async function handler(req, res) {
     "let AdController = null;",
 
     "try {",
+
     "  if (window.Adsgram) {",
+
     "    AdController = window.Adsgram.init({",
     '      blockId: "int-49327"',
     "    });",
-    "  }",
-    "} catch (error) {",
-    '  console.log("AdsGram init error:", error);',
-    "}",
 
-    "let adShown = false;",
-    "let showingAd = false;",
+    "  }",
+
+    "} catch (error) {",
+
+    '  console.log("AdsGram init error:", error);',
+
+    "}",
 
     "async function loadVideo() {",
 
@@ -79,55 +141,73 @@ export default async function handler(req, res) {
     "    const data = await response.json();",
 
     "    if (!data.ok) {",
+
     '      info.innerHTML = "❌ Video not available";',
+
     "      return;",
+
     "    }",
 
     "    video.src = data.video_url;",
+
     '    video.style.display = "block";',
+
+    '    buttons.style.display = "block";',
+
     '    info.style.display = "none";',
 
     "  } catch (error) {",
 
     "    console.log(error);",
+
     '    info.innerHTML = "❌ Unable to load video";',
 
     "  }",
+
     "}",
 
-    "video.addEventListener('play', async function() {",
+    "adButton.addEventListener('click', async function() {",
 
-    "  if (adShown || showingAd) {",
+    "  if (!AdController) {",
+
+    '    adButton.innerText = "Ad unavailable";',
+
     "    return;",
+
     "  }",
 
-    "  adShown = true;",
-    "  showingAd = true;",
+    "  adButton.disabled = true;",
 
-    "  video.pause();",
-
-    "  if (AdController) {",
-    "    try {",
-    "      await AdController.show();",
-    '      console.log("AdsGram ad completed");',
-    "    } catch (error) {",
-    "      console.log('AdsGram error:', error);",
-    "    }",
-    "  }",
-
-    "  showingAd = false;",
+    '  adButton.innerText = "⏳ Loading Ad...";',
 
     "  try {",
-    "    await video.play();",
+
+    "    await AdController.show();",
+
+    '    adButton.innerText = "✅ Ad completed";',
+
     "  } catch (error) {",
-    "    console.log('Video play error:', error);",
+
+    "    console.log('AdsGram error:', error);",
+
+    '    adButton.innerText = "📺 Watch Ad";',
+
     "  }",
+
+    "  setTimeout(function() {",
+
+    "    adButton.disabled = false;",
+
+    '    adButton.innerText = "📺 Watch Ad";',
+
+    "  }, 3000);",
 
     "});",
 
     "loadVideo();",
 
     "</script>",
+
     "</body>",
     "</html>"
   ].join("\n");
